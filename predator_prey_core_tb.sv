@@ -11,6 +11,8 @@ module predator_prey_tb;
 
     real real_val_prey;
     real real_val_predator;
+    int c = 0;
+    integer csv_file;
 
     // Clock generation
     always #5 clk = ~clk;
@@ -32,13 +34,22 @@ module predator_prey_tb;
     );
 
     initial begin
+        csv_file = $fopen("predator_prey.csv", "w");
+
+        if (csv_file == 0) begin
+            $display("ERROR: Could not open CSV file.");
+            $stop;
+        end
+    end
+
+    initial begin
         clk = 0;
         reset = 1;
 
         #20;
         reset = 0;
 
-        #20000;
+        #1400000;
 
         $stop;
     end
@@ -46,11 +57,14 @@ module predator_prey_tb;
     // Display only when tick occurs
     always @(posedge clk) begin
         if (tick) begin
+        c = c+1;
 	    real_val_prey = $itor(prey) / 65536.0;
 	    real_val_predator = $itor(predator) / 65536.0;
-            $display("Time=%0t | prey=%0d -> %0f | y=%0d -> %0f",
-                     $time, prey, real_val_prey, predator, real_val_predator);
+            $display("Iter=%0d | Time=%0t | prey=%0d -> %0f | y=%0d -> %0f",
+                     c, $time, prey, real_val_prey, predator, real_val_predator);
+        $fwrite(csv_file, "%0d,%0d\n", prey, predator);
         end
+
     end
 
     // Waveform dump

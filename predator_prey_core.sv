@@ -14,7 +14,7 @@ module predator_prey (
     parameter BETA  = 32'd32768;   // 0.5
     parameter GAMMA = 32'd65536;   // 1.0
     parameter DELTA = 32'd32768;   // 0.5
-    parameter H     = 32'd65;   // 0.5
+    parameter H     = 32'd66;   // 0.001
 
     logic signed [63:0] mult_xy;
     logic signed [63:0] mult1, mult2, mult3, mult4;
