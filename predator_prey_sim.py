@@ -11,7 +11,7 @@ delta = 0.5
 # 1. LOWER the step size so the simulation doesn't explode
 h = 0.001 
 
-for i in range(100_000):
+for i in range(17500):
     # 2. GRAB current values so they don't change mid-calculation
     current_prey = prey[-1]
     current_predator = predator[-1]
