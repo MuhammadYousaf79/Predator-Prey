@@ -10,14 +10,15 @@ module uart_baud_gen (
     logic [BAUD_COUNT_WIDTH-1:0] baud_counter;
 
     always_comb begin
-        if ((baud_counter == BAUD_COUNT_TO) || (baud_counter == BAUD_COUNT_TO + 1)) begin
+        // if ((baud_counter == BAUD_COUNT_TO) || (baud_counter == BAUD_COUNT_TO + 1)) begin
+        if (baud_counter == BAUD_COUNT_TO) begin
             baud_tick = 1;
         end else begin
             baud_tick = 0;
         end
     end
 
-    always_ff @(posedge clk or posedge reset) begin
+    always_ff @(negedge clk or posedge reset) begin // changed posedge to negedge
         if (reset) begin
             baud_counter <= 0;
         end else begin
