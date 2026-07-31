@@ -12,8 +12,8 @@ module uart_tx_datapath(
     input logic           en,
     input logic     [1:0] sel,
 
-    input logic           tx_out,
-    input logic           of
+    output logic           tx_out,
+    output logic           of
 
 );
 
@@ -23,7 +23,7 @@ module uart_tx_datapath(
 
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
-            ref_a <= 8'b0;
+            reg_a <= 8'b0;
         end else if (en) begin
             reg_a <= data_in;
         end
@@ -39,7 +39,7 @@ module uart_tx_datapath(
         end
     end
 
-    always_ff @(posedge alk or posedge reset) begin
+    always_ff @(posedge clk or posedge reset) begin
         if (reset || clr) begin
             counter <= 3'b0;
         end else if (en) begin
@@ -49,13 +49,13 @@ module uart_tx_datapath(
 
     always_comb begin
 
-        of = (counter == 3'b7);
-        
-        if (sel == 2'b0) begin
+        of = (counter == 3'b111);
+
+        if (sel == 2'b00) begin
             tx_out = 0;
-        end else if (sel == 2'b1) begin
+        end else if (sel == 2'b01) begin
             tx_out = 1;
-        end else if (sel == 2'b2) begin
+        end else if (sel == 2'b10) begin
             tx_out = shift_reg[0];
         end
     end

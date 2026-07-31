@@ -16,7 +16,7 @@ module uart_tx_controller (
 );
 
 
-    typedef enum logic { IDLE, LOAD_DATA, TRANSFER } state;
+    typedef enum logic [1:0] { IDLE, LOAD_DATA, TRANSFER } state;
     state C_state, N_state;
 
 
@@ -34,7 +34,7 @@ module uart_tx_controller (
             IDLE: begin
                 if (!valid_in) begin
                     N_state = IDLE;
-                    sel = 2'b1;
+                    sel = 2'b01;
                     clr = 1'b1;
                     en = 1'b0;
                     er = 1'b0;
@@ -52,21 +52,21 @@ module uart_tx_controller (
                     N_state = LOAD_DATA;
                 end else if (transfer) begin
                     load_reg = 1'b1;
-                    sel = 2'b0;
+                    sel = 2'b00;
                     N_state = TRANSFER;
                 end
             end
 
             TRANSFER: begin
                 if (transfer) begin
-                    sel = 2'b2;
+                    sel = 2'b10;
                 end
                 if (!of) begin
                     N_state = TRANSFER;
                     shift = transfer;
                     en = transfer;
                 end else if (of) begin
-                    sel = 2'b2;
+                    sel = 2'b10;
                     done = 1'b1;
                     N_state = IDLE;
                 end
