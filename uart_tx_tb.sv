@@ -8,7 +8,7 @@ module uart_tx_tb();
     logic clk;
     logic reset;
     logic valid_in;
-    logic baud_tick;
+    // logic baud_tick;
     logic [7:0] data_in;
 
     logic tx_out;
@@ -20,7 +20,7 @@ module uart_tx_tb();
         .clk(clk),
         .reset(reset),
         .valid_in(valid_in),
-        .baud_tick(baud_tick),
+        // .baud_tick(baud_tick),
         .data_in(data_in),
         .tx_out(tx_out),
         .done(done)
@@ -50,7 +50,7 @@ module uart_tx_tb();
         // Wait a few baud ticks to let the system stabilize
         // repeat(3) @(posedge clk iff baud_tick);
 
-        repeat(4) @(posedge clk);
+        repeat(10) @(posedge clk);
 
         // --- TEST 1: Send 8'hA5 (Binary: 10100101) ---
         $display("\n[%0t] Starting Test 1: Sending 8'hA5 (10100101)", $time);
