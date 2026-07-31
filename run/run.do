@@ -1,5 +1,5 @@
 # Configurable Variables
-set TOP uart_baud_gen_tb
+set TOP uart_tx_tb
 set SRC_DIR ../
 
 # Setup Library

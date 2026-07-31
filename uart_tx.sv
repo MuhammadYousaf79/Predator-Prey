@@ -12,8 +12,10 @@ module uart_tx(
 
 );
 
-    typedef enum logic { IDLE, DATA_BITS } state;
+    typedef enum logic [1:0] { IDLE, START, DATA_BITS } state;
     state C_state, N_state;
+
+    logic [7:0] latched_data;
 
     logic [3:0] bit_idx;
     logic incr_bit_idx;
@@ -39,30 +41,38 @@ module uart_tx(
         case (C_state)
 
             IDLE: begin
-                if (tx_start && baud_tick) begin
+                if (tx_start) begin
                     tx_active = 1'b1;
-                    tx_out = 1'b0;
-                    N_state = DATA_BITS;
+                    N_state = START;
                 end else begin
                     N_state = IDLE;
                 end
             end
 
-            DATA_BITS: begin
+            START: begin
+                tx_active = 1'b1;
+                tx_out = 1'b0;
                 if (baud_tick) begin
-                    tx_out = data[bit_idx];
-                    tx_active = 1'b1;
+                    latched_data = data;
+                    N_state = DATA_BITS;
+                end
+            end
+
+            DATA_BITS: begin
+                tx_active = 1'b1;
+                tx_out = latched_data[bit_idx];
+                if (baud_tick) begin
                     incr_bit_idx = 1'b1;
                     N_state = DATA_BITS;
 
-                    if (bit_idx == 8) begin
-                        tx_out = 1'b1;
-                        tx_active = 1'b0;
-                        incr_bit_idx = 1'b0;
-                        reset_bit_idx = 1'b1;
-                        tx_done = 1'b1;
-                        N_state = IDLE;
-                    end
+                end
+                if (bit_idx == 8) begin
+                    tx_out = 1'b1;
+                    tx_active = 1'b0;
+                    incr_bit_idx = 1'b0;
+                    reset_bit_idx = 1'b1;
+                    tx_done = 1'b1;
+                    N_state = IDLE;
                 end
             end
         
