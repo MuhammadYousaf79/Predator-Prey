@@ -5,6 +5,7 @@ module uart_tx (
     input  logic [7:0] data_in,
 
     output logic       tx_out,
+    output logic       ready_out,
     output logic       done
 );
 
@@ -40,6 +41,7 @@ module uart_tx (
         .clk(clk),
         .reset(reset),
         .valid_in(valid_in),
+        .ready_out(ready_out),
         .transfer(baud_tick),
         .of(of),
         .sel(sel),
