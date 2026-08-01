@@ -11,9 +11,9 @@ module top (
     
     logic [7:0]  data_in;
     logic        valid_in;
+    logic        ready_out;
     logic        done;
 
-    logic valid_in;
     logic [31:0] prey_latched;
     logic [31:0] predator_latched;
     logic [2:0]  pack_counter;
@@ -37,6 +37,7 @@ module top (
         .clk(clk),
         .reset(reset),
         .valid_in(valid_in),
+        .ready_out(ready_out),
         .data_in(data_in),
         .tx_out(tx_out),
         .done(done)

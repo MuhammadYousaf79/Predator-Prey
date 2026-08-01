@@ -1,5 +1,5 @@
 # Configurable Variables
-set TOP predator_prey_tb
+set TOP top_tb
 set SRC_DIR ../
 
 # Setup Library
