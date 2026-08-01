@@ -1,11 +1,11 @@
-module timer (
+ timer (
     input  logic clk,
     input  logic reset,
     output logic tick
 );
 
-    parameter COUNT_WIDTH = 4;
-    parameter COUNT_TO = (1 << COUNT_WIDTH) - 1;
+    parameter COUNT_WIDTH = 17;
+    parameter COUNT_TO = 100000;
 
     logic [COUNT_WIDTH-1:0] counter;
 
@@ -25,4 +25,3 @@ module timer (
         end
     end
 
-endmodule

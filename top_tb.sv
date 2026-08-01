@@ -5,7 +5,7 @@ module top_tb ();
     logic reset;
     logic tx_out;
 
-    top top_dut (
+    top dut (
         .clk(clk),
         .reset(reset),
         .tx_out(tx_out)
