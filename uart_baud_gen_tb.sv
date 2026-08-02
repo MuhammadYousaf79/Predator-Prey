@@ -1,15 +1,15 @@
-module timer_tb();
+module uart_baud_gen_tb();
     
     logic clk;
     logic reset;
-    logic tick;
+    logic baud_tick;
 
     always #5 clk = ~clk;
 
-    timer dut (
+    uart_baud_gen dut (
         .clk(clk),
         .reset(reset),
-        .tick(tick)
+        .baud_tick(baud_tick)
     );
 
     initial begin
@@ -20,7 +20,7 @@ module timer_tb();
         #20;
         reset = 0;
 
-        repeat(3) @(posedge tick);
+        repeat(3) @(posedge baud_tick);
 
         $stop;
 
