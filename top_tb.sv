@@ -21,7 +21,7 @@ module top_tb ();
         reset = 0;
         
         
-        repeat(2) @(posedge dut.tick);
+        repeat(5) @(posedge dut.tick);
 
         $stop;
 
