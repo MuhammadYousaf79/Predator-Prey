@@ -58,7 +58,7 @@ module top (
             prey_latched     <= 32'b0;
             predator_latched <= 32'b0;
         end else if (tick) begin
-            prey_latched <= prey;
+            prey_latched <= 32'hdeadbeef;
             predator_latched <= predator;
             valid_in <= 1'b1;
         end
@@ -80,11 +80,12 @@ module top (
                 3'd7: data_in = predator_latched[7:0];
                 default: data_in = 8'b0;
             endcase
-            if (done) begin
-                pack_en = 1'b1;
-            end else begin
-                pack_en = 1'b0;
-            end
+            
+        end
+        if (done) begin
+            pack_en = 1'b1;
+        end else begin
+            pack_en = 1'b0;
         end
     end
     

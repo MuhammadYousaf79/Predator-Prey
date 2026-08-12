@@ -64,6 +64,7 @@ module uart_tx_controller (
                 if (transfer) begin
                     if (of) begin
                         N_state = STOP; // Sent 8 bits, go to stop bit
+                        done = 1'b1;
                     end else begin
                         shift = 1'b1;   // Shift to next bit
                         en    = 1'b1;   // Increment counter
@@ -73,10 +74,10 @@ module uart_tx_controller (
 
             STOP: begin
                 sel = 2'b01; // Drive tx_out = 1
+                done = 1'b0;
                 
                 // Hold the stop bit until the next baud tick
                 if (transfer) begin
-                    done    = 1'b1;
                     N_state = IDLE;
                 end
             end

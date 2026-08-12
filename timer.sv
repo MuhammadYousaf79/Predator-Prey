@@ -17,7 +17,7 @@
         end
     end
 
-    always_ff @(negedge clk or posedge reset or negedge tick) begin
+    always_ff @(negedge clk or posedge reset) begin
         if (reset) begin
             counter <= 0;
         end else if (tick) begin
