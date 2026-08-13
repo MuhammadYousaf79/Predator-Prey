@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import csv
 
-csv_file_path = "./run/predator_prey.csv"
+csv_file_path = "predator_prey.csv"
 
 prey = []
 predator = []
