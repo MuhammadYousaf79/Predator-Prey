@@ -10,6 +10,7 @@ module uart_tx_controller (
     output logic       clr,
     output logic       load_reg,
     output logic       shift,
+    output logic       ready_out,
     output logic       done
 );
 
@@ -28,18 +29,20 @@ module uart_tx_controller (
     // Next State and Output Logic
     always_comb begin
         // 1. DEFAULT ASSIGNMENTS (Prevents Latches)
-        N_state  = C_state;
-        sel      = 2'b01; // Default tx_out = 1 (Idle)
-        en       = 1'b0;
-        clr      = 1'b0;
-        load_reg = 1'b0;
-        shift    = 1'b0;
-        done     = 1'b0;
+        N_state     = C_state;
+        sel         = 2'b01; // Default tx_out = 1 (Idle)
+        en          = 1'b0;
+        clr         = 1'b0;
+        load_reg    = 1'b0;
+        shift       = 1'b0;
+        done        = 1'b0;
+        ready_out   = 1'b0;
 
         // 2. FSM LOGIC
         case (C_state)
             
             IDLE: begin
+                ready_out = 1'b1;
                 if (valid_in) begin
                     load_reg = 1'b1;  // Grab the data immediately
                     clr      = 1'b1;  // Clear the bit counter

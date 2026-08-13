@@ -28,58 +28,58 @@ module predator_prey (
     logic signed [31:0] next_prey;
     logic signed [31:0] next_predator;
 
-    // // ---------------------------------------------------------
-    // // COMBINATIONAL LOGIC: Calculate the next values
-    // // ---------------------------------------------------------
-    // always_comb begin
-    //     // xy = x * y
-    //     // (Verilog automatically sign-extends 32-bit to 64-bit here because LHS is 64-bit)
-    //     mult_xy = prey * predator;
-    //     xy = mult_xy >>> 16;
+    // ---------------------------------------------------------
+    // COMBINATIONAL LOGIC: Calculate the next values
+    // ---------------------------------------------------------
+    always_comb begin
+        // xy = x * y
+        // (Verilog automatically sign-extends 32-bit to 64-bit here because LHS is 64-bit)
+        mult_xy = prey * predator;
+        xy = mult_xy >>> 16;
 
-    //     // dx = ALPHA*x - BETA*xy
-    //     mult1 = ALPHA * prey;
-    //     mult2 = BETA * xy;
-    //     dx = (mult1 >>> 16) - (mult2 >>> 16);
+        // dx = ALPHA*x - BETA*xy
+        mult1 = ALPHA * prey;
+        mult2 = BETA * xy;
+        dx = (mult1 >>> 16) - (mult2 >>> 16);
 
-    //     // dy = GAMMA*xy - DELTA*y (FIXED: Swapped GAMMA and DELTA)
-    //     mult3 = GAMMA * xy; 
-    //     mult4 = DELTA * predator; 
-    //     dy = (mult3 >>> 16) - (mult4 >>> 16);
+        // dy = GAMMA*xy - DELTA*y (FIXED: Swapped GAMMA and DELTA)
+        mult3 = GAMMA * xy; 
+        mult4 = DELTA * predator; 
+        dy = (mult3 >>> 16) - (mult4 >>> 16);
 
-    //     // Euler update calculations
-    //     mult_h_dx = H * dx;
-    //     mult_h_dy = H * dy;
+        // Euler update calculations
+        mult_h_dx = H * dx;
+        mult_h_dy = H * dy;
         
-    //     next_prey = prey + (mult_h_dx >>> 16);
-    //     next_predator = predator + (mult_h_dy >>> 16);
-    // end
+        next_prey = prey + (mult_h_dx >>> 16);
+        next_predator = predator + (mult_h_dy >>> 16);
+    end
 
     // ---------------------------------------------------------
     // COMBINATIONAL LOGIC: Calculate the next values with ROUNDING
     // ---------------------------------------------------------
-    always_comb begin
-        mult_xy = prey * predator;
-        // Add 2^15 (32768) before shifting to round to nearest
-        xy = (mult_xy + 64'sd32768) >>> 16;
+    // always_comb begin
+    //     mult_xy = prey * predator;
+    //     // Add 2^15 (32768) before shifting to round to nearest
+    //     xy = (mult_xy + 64'sd32768) >>> 16;
 
-        mult1 = ALPHA * prey;
-        mult2 = BETA * xy;
-        // Round the intermediate multiplications
-        dx = ((mult1 + 64'sd32768) >>> 16) - ((mult2 + 64'sd32768) >>> 16);
+    //     mult1 = ALPHA * prey;
+    //     mult2 = BETA * xy;
+    //     // Round the intermediate multiplications
+    //     dx = ((mult1 + 64'sd32768) >>> 16) - ((mult2 + 64'sd32768) >>> 16);
 
-        mult3 = GAMMA * xy; 
-        mult4 = DELTA * predator; 
-        // Round the intermediate multiplications
-        dy = ((mult3 + 64'sd32768) >>> 16) - ((mult4 + 64'sd32768) >>> 16);
+    //     mult3 = GAMMA * xy; 
+    //     mult4 = DELTA * predator; 
+    //     // Round the intermediate multiplications
+    //     dy = ((mult3 + 64'sd32768) >>> 16) - ((mult4 + 64'sd32768) >>> 16);
 
-        mult_h_dx = H * dx;
-        mult_h_dy = H * dy;
+    //     mult_h_dx = H * dx;
+    //     mult_h_dy = H * dy;
         
-        // Round the final Euler update
-        next_prey = prey + ((mult_h_dx + 64'sd32768) >>> 16);
-        next_predator = predator + ((mult_h_dy + 64'sd32768) >>> 16);
-    end
+    //     // Round the final Euler update
+    //     next_prey = prey + ((mult_h_dx + 64'sd32768) >>> 16);
+    //     next_predator = predator + ((mult_h_dy + 64'sd32768) >>> 16);
+    // end
 
     // ---------------------------------------------------------
     // SEQUENTIAL LOGIC: Update registers on clock edge

@@ -1,5 +1,9 @@
 # Configurable Variables
+<<<<<<< HEAD
 set TOP uart_tx_tb
+=======
+set TOP top_tb
+>>>>>>> top
 set SRC_DIR ../
 
 # Setup Library
