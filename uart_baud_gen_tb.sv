@@ -1,10 +1,10 @@
-module uart_baud_gen_tb ();
+module uart_baud_gen_tb();
     
     logic clk;
     logic reset;
     logic baud_tick;
 
-    always #0.5 clk = ~clk;
+    always #5 clk = ~clk;
 
     uart_baud_gen dut (
         .clk(clk),
@@ -20,7 +20,7 @@ module uart_baud_gen_tb ();
         #20;
         reset = 0;
 
-        #10000;
+        repeat(3) @(posedge baud_tick);
 
         $stop;
 

@@ -15,15 +15,13 @@ module top_tb ();
 
     initial begin
         clk = 0;
-        reset = 0;
-
-        @(posedge clk);
         reset = 1;
-        repeat(2) @(posedge clk);
+
+        #20;
         reset = 0;
-
-
-        #20000000
+        
+        
+        repeat(5) @(posedge dut.tick);
 
         $stop;
 

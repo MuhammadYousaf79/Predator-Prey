@@ -20,7 +20,7 @@ module timer_tb();
         #20;
         reset = 0;
 
-        #1000;
+        repeat(3) @(posedge tick);
 
         $stop;
 

@@ -18,6 +18,7 @@ module top (
     logic [31:0] predator_latched;
     logic [2:0]  pack_counter;
     logic pack_en;
+    logic pack_rst;
 
     predator_prey model (
         .clk(clk),
@@ -44,7 +45,7 @@ module top (
     );
 
     always_ff @(posedge clk or posedge reset) begin
-        if (reset) begin
+        if (reset | pack_rst) begin
             pack_counter <= 3'b0;
         end else if (pack_en) begin
             pack_counter <= pack_counter + 3'b1;;
@@ -61,6 +62,9 @@ module top (
             prey_latched <= prey;
             predator_latched <= predator;
             valid_in <= 1'b1;
+            pack_rst <= 1'b1;
+        end else begin
+            pack_rst <= 1'b0;
         end
     end
 
@@ -80,11 +84,12 @@ module top (
                 3'd7: data_in = predator_latched[7:0];
                 default: data_in = 8'b0;
             endcase
-            if (done) begin
-                pack_en = 1'b1;
-            end else begin
-                pack_en = 1'b0;
-            end
+            
+        end
+        if (done) begin
+            pack_en = 1'b1;
+        end else begin
+            pack_en = 1'b0;
         end
     end
     

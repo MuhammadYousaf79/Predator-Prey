@@ -26,6 +26,8 @@ module uart_baud_gen (
     always_ff @(negedge clk or posedge reset) begin // changed posedge to negedge
         if (reset) begin
             baud_counter <= 0;
+        end else if (baud_tick) begin
+            baud_counter <= 0;
         end else begin
             baud_counter <= baud_counter + 1;
         end
