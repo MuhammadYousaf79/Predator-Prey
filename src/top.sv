@@ -16,7 +16,7 @@ module top (
 
     logic [31:0] prey_latched;
     logic [31:0] predator_latched;
-    logic [2:0]  pack_counter;
+    logic [3:0]  pack_counter;
     logic pack_en;
     logic pack_rst;
 
@@ -46,9 +46,9 @@ module top (
 
     always_ff @(posedge clk or posedge reset) begin
         if (reset || pack_rst) begin
-            pack_counter <= 3'b0;
+            pack_counter <= 4'b0;
         end else if (pack_en) begin
-            pack_counter <= pack_counter + 3'b1;
+            pack_counter <= pack_counter + 4'b1;
         end
     end
 
@@ -65,6 +65,7 @@ module top (
             pack_rst <= 1'b1;
         end else begin
             pack_rst <= 1'b0;
+            valid_in <= (pack_counter <= 4'b0111);
         end
     end
 
@@ -74,14 +75,14 @@ module top (
         end
         if (ready_out) begin
             case (pack_counter)
-                3'd0: data_in = prey_latched[31:24];
-                3'd1: data_in = prey_latched[23:16];
-                3'd2: data_in = prey_latched[15:8];
-                3'd3: data_in = prey_latched[7:0];
-                3'd4: data_in = predator_latched[31:24];
-                3'd5: data_in = predator_latched[23:16];
-                3'd6: data_in = predator_latched[15:8];
-                3'd7: data_in = predator_latched[7:0];
+                4'd0: data_in = prey_latched[31:24];
+                4'd1: data_in = prey_latched[23:16];
+                4'd2: data_in = prey_latched[15:8];
+                4'd3: data_in = prey_latched[7:0];
+                4'd4: data_in = predator_latched[31:24];
+                4'd5: data_in = predator_latched[23:16];
+                4'd6: data_in = predator_latched[15:8];
+                4'd7: data_in = predator_latched[7:0];
                 default: data_in = 8'b0;
             endcase
             
