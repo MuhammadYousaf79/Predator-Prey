@@ -1,25 +1,33 @@
-import serial
+import matplotlib.pyplot as plt
+import csv
 
-ser = serial.Serial('COM4',115200)
+csv_file_path = "script/rx_file.csv"
 
-rx_file = "script/rx_file.csv"
+prey = []
+predator = []
 
+with open(csv_file_path) as csv_file:
+    csv_reader = csv.reader(csv_file, delimiter=',')
+    for row in csv_reader:
+        if (row[0][2] == "8"):
+            row[0] = "0x0" + row[0][3:]
+        prey.append(float(int(row[0], 16)) / 65536)
+        predator.append(float(int(row[1], 16)) / 65536)
 
-with open(rx_file, "w") as f:
-    f.write("0x")
-    while True:
-        for i in range(4):
-            data = ser.read()
-            if data:
-                f.write(f"{data[0]:02X}")
-                # if (i == 0): 
-                #     f.write(hex(ord(data)))
-                # else:
-                #     f.write(hex(ord(data))[2:])
-        f.write(",0x")
-        for i in range(4):
-            data = ser.read()
-            if data:
-                # f.write(hex(ord(data))[2:])
-                f.write(f"{data[0]:02X}")
-        f.write("\n0x")
+plt.figure()
+plt.plot(prey)
+plt.title("prey")
+plt.xlabel("prey")
+
+plt.figure()
+plt.plot(predator)
+plt.title("predator")
+plt.xlabel("predator")
+
+plt.figure()
+plt.plot(prey, predator)
+plt.title("prey vs predator")
+plt.xlabel("prey")
+plt.ylabel("predator")
+
+plt.show()
