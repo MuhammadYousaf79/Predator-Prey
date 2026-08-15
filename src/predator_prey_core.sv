@@ -9,84 +9,85 @@ module predator_prey (
 
     parameter DATA_WIDTH = 32;
 
-    // Q16.16 fixed point
-    // FIXED: Added 'signed' and 'sd' to force signed arithmetic
+    // Q16.16 fixed point parameters
     parameter signed [31:0] ALPHA = 32'sd65536;   // 1.0
     parameter signed [31:0] BETA  = 32'sd32768;   // 0.5
     parameter signed [31:0] GAMMA = 32'sd65536;   // 1.0
     parameter signed [31:0] DELTA = 32'sd32768;   // 0.5
     parameter signed [31:0] H     = 32'sd66;      // 0.001
 
-    // Combinational intermediates
-    logic signed [63:0] mult_xy, mult1, mult2, mult3, mult4;
-    logic signed [63:0] mult_h_dx, mult_h_dy;
+    // ---------------------------------------------------------
+    // PIPELINE STAGE 1: Calculate xy, alpha*prey, delta*predator
+    // ---------------------------------------------------------
+    logic signed [63:0] stg1_mult_xy, stg1_mult_alpha, stg1_mult_delta;
     
-    logic signed [31:0] xy;
-    logic signed [31:0] dx;
-    logic signed [31:0] dy;
+    logic signed [31:0] s1_xy, s1_alpha_prey, s1_delta_pred;
+    logic signed [31:0] s1_prey, s1_predator;
+
+    always_comb begin
+        stg1_mult_xy    = prey * predator;
+        stg1_mult_alpha = ALPHA * prey;
+        stg1_mult_delta = DELTA * predator;
+    end
+
+    always_ff @(posedge clk) begin
+        // Shift and store intermediate calculations
+        s1_xy         <= stg1_mult_xy >>> 16;
+        s1_alpha_prey <= stg1_mult_alpha >>> 16;
+        s1_delta_pred <= stg1_mult_delta >>> 16;
+        
+        // Pass the raw populations along the pipeline
+        s1_prey       <= prey;
+        s1_predator   <= predator;
+    end
+
+    // ---------------------------------------------------------
+    // PIPELINE STAGE 2: Calculate dx and dy partials
+    // ---------------------------------------------------------
+    logic signed [63:0] stg2_mult_beta, stg2_mult_gamma;
+    
+    logic signed [31:0] s2_dx, s2_dy;
+    logic signed [31:0] s2_prey, s2_predator;
+
+    always_comb begin
+        stg2_mult_beta  = BETA * s1_xy;
+        stg2_mult_gamma = GAMMA * s1_xy;
+    end
+
+    always_ff @(posedge clk) begin
+        // dx = (ALPHA*prey) - (BETA*xy)
+        s2_dx <= s1_alpha_prey - (stg2_mult_beta >>> 16);
+        
+        // dy = (GAMMA*xy) - (DELTA*predator)
+        s2_dy <= (stg2_mult_gamma >>> 16) - s1_delta_pred;
+        
+        // Pass the raw populations down to the final stage
+        s2_prey       <= s1_prey;
+        s2_predator   <= s1_predator;
+    end
+
+    // ---------------------------------------------------------
+    // PIPELINE STAGE 3: Multiply by H and add to original
+    // ---------------------------------------------------------
+    logic signed [63:0] stg3_mult_h_dx, stg3_mult_h_dy;
     
     logic signed [31:0] next_prey;
     logic signed [31:0] next_predator;
 
-    // ---------------------------------------------------------
-    // COMBINATIONAL LOGIC: Calculate the next values
-    // ---------------------------------------------------------
     always_comb begin
-        // xy = x * y
-        // (Verilog automatically sign-extends 32-bit to 64-bit here because LHS is 64-bit)
-        mult_xy = prey * predator;
-        xy = mult_xy >>> 16;
-
-        // dx = ALPHA*x - BETA*xy
-        mult1 = ALPHA * prey;
-        mult2 = BETA * xy;
-        dx = (mult1 >>> 16) - (mult2 >>> 16);
-
-        // dy = GAMMA*xy - DELTA*y (FIXED: Swapped GAMMA and DELTA)
-        mult3 = GAMMA * xy; 
-        mult4 = DELTA * predator; 
-        dy = (mult3 >>> 16) - (mult4 >>> 16);
-
-        // Euler update calculations
-        mult_h_dx = H * dx;
-        mult_h_dy = H * dy;
+        stg3_mult_h_dx = H * s2_dx;
+        stg3_mult_h_dy = H * s2_dy;
         
-        next_prey = prey + (mult_h_dx >>> 16);
-        next_predator = predator + (mult_h_dy >>> 16);
+        // next = current + (H * derivative)
+        next_prey     = s2_prey + (stg3_mult_h_dx >>> 16);
+        next_predator = s2_predator + (stg3_mult_h_dy >>> 16);
     end
 
     // ---------------------------------------------------------
-    // COMBINATIONAL LOGIC: Calculate the next values with ROUNDING
-    // ---------------------------------------------------------
-    // always_comb begin
-    //     mult_xy = prey * predator;
-    //     // Add 2^15 (32768) before shifting to round to nearest
-    //     xy = (mult_xy + 64'sd32768) >>> 16;
-
-    //     mult1 = ALPHA * prey;
-    //     mult2 = BETA * xy;
-    //     // Round the intermediate multiplications
-    //     dx = ((mult1 + 64'sd32768) >>> 16) - ((mult2 + 64'sd32768) >>> 16);
-
-    //     mult3 = GAMMA * xy; 
-    //     mult4 = DELTA * predator; 
-    //     // Round the intermediate multiplications
-    //     dy = ((mult3 + 64'sd32768) >>> 16) - ((mult4 + 64'sd32768) >>> 16);
-
-    //     mult_h_dx = H * dx;
-    //     mult_h_dy = H * dy;
-        
-    //     // Round the final Euler update
-    //     next_prey = prey + ((mult_h_dx + 64'sd32768) >>> 16);
-    //     next_predator = predator + ((mult_h_dy + 64'sd32768) >>> 16);
-    // end
-
-    // ---------------------------------------------------------
-    // SEQUENTIAL LOGIC: Update registers on clock edge
+    // SEQUENTIAL LOGIC: Update final registers on tick
     // ---------------------------------------------------------
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
-            // FIXED: Used signed decimals for initial state
             prey     <= 32'sd131072; // 2.0 in Q16.16
             predator <= 32'sd65536;  // 1.0 in Q16.16
         end

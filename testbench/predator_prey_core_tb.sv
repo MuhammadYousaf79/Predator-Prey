@@ -34,7 +34,7 @@ module predator_prey_tb;
     );
 
     initial begin
-        csv_file = $fopen("predator_prey.csv", "w");
+        csv_file = $fopen("../script/pipeline_predator_prey.csv", "w");
 
         if (csv_file == 0) begin
             $display("ERROR: Could not open CSV file.");
