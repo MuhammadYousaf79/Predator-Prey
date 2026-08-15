@@ -45,10 +45,10 @@ module top (
     );
 
     always_ff @(posedge clk or posedge reset) begin
-        if (reset | pack_rst) begin
+        if (reset || pack_rst) begin
             pack_counter <= 3'b0;
         end else if (pack_en) begin
-            pack_counter <= pack_counter + 3'b1;;
+            pack_counter <= pack_counter + 3'b1;
         end
     end
 
