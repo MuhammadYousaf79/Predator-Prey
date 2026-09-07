@@ -11,8 +11,8 @@ with open(csv_file_path) as csv_file:
     for row in csv_reader:
         if (row[0][2] == "8"):
             row[0] = "0x0" + row[0][3:]
-        prey.append(float(int(row[0], 16)) / 65536)
-        predator.append(float(int(row[1], 16)) / 65536)
+        prey.append(float(int(row[0], 16)) / 16777216)
+        predator.append(float(int(row[1], 16)) / 16777216)
 
 plt.figure()
 plt.plot(prey)
