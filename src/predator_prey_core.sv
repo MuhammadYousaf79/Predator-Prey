@@ -9,12 +9,12 @@ module predator_prey (
 
     parameter DATA_WIDTH = 32;
 
-    // Q16.16 fixed point parameters
-    parameter signed [31:0] ALPHA = 32'sd65536;   // 1.0
-    parameter signed [31:0] BETA  = 32'sd32768;   // 0.5
-    parameter signed [31:0] GAMMA = 32'sd65536;   // 1.0
-    parameter signed [31:0] DELTA = 32'sd32768;   // 0.5
-    parameter signed [31:0] H     = 32'sd66;      // 0.001
+    // Q8.24 fixed point parameters
+    parameter signed [31:0] ALPHA = 32'sd16777216;  // 1.0
+    parameter signed [31:0] BETA  = 32'sd8388608;   // 0.5
+    parameter signed [31:0] GAMMA = 32'sd16777216;  // 1.0
+    parameter signed [31:0] DELTA = 32'sd8388608;   // 0.5
+    parameter signed [31:0] H     = 32'sd16777;     // 0.001
 
     // ---------------------------------------------------------
     // PIPELINE STAGE 1: Calculate xy, alpha*prey, delta*predator
@@ -31,12 +31,11 @@ module predator_prey (
     end
 
     always_ff @(posedge clk) begin
-        // Shift and store intermediate calculations
-        s1_xy         <= stg1_mult_xy >>> 16;
-        s1_alpha_prey <= stg1_mult_alpha >>> 16;
-        s1_delta_pred <= stg1_mult_delta >>> 16;
+        // Shift right by 24 for Q8.24 format
+        s1_xy         <= stg1_mult_xy >>> 24;
+        s1_alpha_prey <= stg1_mult_alpha >>> 24;
+        s1_delta_pred <= stg1_mult_delta >>> 24;
         
-        // Pass the raw populations along the pipeline
         s1_prey       <= prey;
         s1_predator   <= predator;
     end
@@ -55,13 +54,10 @@ module predator_prey (
     end
 
     always_ff @(posedge clk) begin
-        // dx = (ALPHA*prey) - (BETA*xy)
-        s2_dx <= s1_alpha_prey - (stg2_mult_beta >>> 16);
+        // Shift right by 24 for Q8.24 format
+        s2_dx <= s1_alpha_prey - (stg2_mult_beta >>> 24);
+        s2_dy <= (stg2_mult_gamma >>> 24) - s1_delta_pred;
         
-        // dy = (GAMMA*xy) - (DELTA*predator)
-        s2_dy <= (stg2_mult_gamma >>> 16) - s1_delta_pred;
-        
-        // Pass the raw populations down to the final stage
         s2_prey       <= s1_prey;
         s2_predator   <= s1_predator;
     end
@@ -78,9 +74,9 @@ module predator_prey (
         stg3_mult_h_dx = H * s2_dx;
         stg3_mult_h_dy = H * s2_dy;
         
-        // next = current + (H * derivative)
-        next_prey     = s2_prey + (stg3_mult_h_dx >>> 16);
-        next_predator = s2_predator + (stg3_mult_h_dy >>> 16);
+        // Shift right by 24 for Q8.24 format
+        next_prey     = s2_prey + (stg3_mult_h_dx >>> 24);
+        next_predator = s2_predator + (stg3_mult_h_dy >>> 24);
     end
 
     // ---------------------------------------------------------
@@ -88,8 +84,8 @@ module predator_prey (
     // ---------------------------------------------------------
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
-            prey     <= 32'sd131072; // 2.0 in Q16.16
-            predator <= 32'sd65536;  // 1.0 in Q16.16
+            prey     <= 32'sd33554432; // 2.0 in Q8.24
+            predator <= 32'sd16777216; // 1.0 in Q8.24
         end
         else if (tick) begin
             prey     <= next_prey;

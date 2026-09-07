@@ -34,7 +34,7 @@ module predator_prey_tb;
     );
 
     initial begin
-        csv_file = $fopen("../script/pipeline_predator_prey.csv", "w");
+        csv_file = $fopen("../script/predator_prey.csv", "w");
 
         if (csv_file == 0) begin
             $display("ERROR: Could not open CSV file.");
@@ -49,7 +49,7 @@ module predator_prey_tb;
         #20;
         reset = 0;
 
-        #1400000;
+        #14000000;
 
         $stop;
     end
@@ -58,8 +58,8 @@ module predator_prey_tb;
     always @(posedge clk) begin
         if (tick) begin
         c = c+1;
-	    real_val_prey = $itor(prey) / 65536.0;
-	    real_val_predator = $itor(predator) / 65536.0;
+	    real_val_prey = $itor(prey) / 16777216.0;
+	    real_val_predator = $itor(predator) / 16777216.0;
             $display("Iter=%0d | Time=%0t | prey=%0d -> %0f | y=%0d -> %0f",
                      c, $time, prey, real_val_prey, predator, real_val_predator);
         $fwrite(csv_file, "%0d,%0d\n", prey, predator);

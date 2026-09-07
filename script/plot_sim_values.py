@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import csv
 
-csv_file_path = "predator_prey.csv"
+csv_file_path = "script/predator_prey.csv"
 
 prey = []
 predator = []
@@ -9,8 +9,8 @@ predator = []
 with open(csv_file_path) as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     for row in csv_reader:
-        prey.append(float(row[0])/65536)
-        predator.append(float(row[1])/65536)
+        prey.append(float(row[0])/16777216)
+        predator.append(float(row[1])/16777216)
 
 plt.figure()
 plt.plot(prey)
