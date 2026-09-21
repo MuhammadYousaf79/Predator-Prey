@@ -21,7 +21,6 @@ while True:
             if data:
                 pp += f"{data[0]:02X}"
 
-        pp = "0x02" + pp[4:]
         prey.append(int(pp, 16) / 16777216)
 
         pp = "0x"

@@ -21,7 +21,8 @@ module uart_tx (
     uart_baud_gen ubg (
         .clk(clk),
         .reset(reset),
-        .baud_tick(baud_tick)
+        .baud_tick(baud_tick),
+        .baud_rst(baud_rst)
     );
 
     uart_tx_datapath datapath (
@@ -49,7 +50,8 @@ module uart_tx (
         .clr(clr),
         .load_reg(load_reg),
         .shift(shift),
-        .done(done)
+        .done(done),
+        .baud_rst(baud_rst)
     );
 
 endmodule

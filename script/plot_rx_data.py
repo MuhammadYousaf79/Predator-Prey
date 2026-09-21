@@ -9,9 +9,6 @@ predator = []
 with open(csv_file_path) as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     for row in csv_reader:
-        row[0] = row[0][0:3] + "2" + row[0][4:]
-        if (row[0][2] == "8"):
-            row[0] = "0x0" + row[0][3:]
         prey.append(float(int(row[0], 16)) / 16777216)
         predator.append(float(int(row[1], 16)) / 16777216)
 

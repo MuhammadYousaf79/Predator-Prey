@@ -1,6 +1,7 @@
 module uart_baud_gen (
     input  logic clk,
     input  logic reset,
+    input logic baud_rst,
     output logic baud_tick
 );
 
@@ -19,7 +20,7 @@ module uart_baud_gen (
     end
 
     always_ff @(negedge clk or posedge reset) begin // changed posedge to negedge
-        if (reset) begin
+        if (reset || baud_rst) begin
             baud_counter <= 0;
         end else if (baud_tick) begin
             baud_counter <= 0;
