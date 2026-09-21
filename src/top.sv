@@ -1,7 +1,6 @@
 module top (
-    input logic clk,
-    input logic reset,
-
+    input  logic clk,
+    input  logic reset,
     output logic tx_out
 );
 
@@ -17,8 +16,8 @@ module top (
     logic [31:0] prey_latched;
     logic [31:0] predator_latched;
     logic [3:0]  pack_counter;
-    logic pack_en;
-    logic pack_rst;
+    logic        pack_en;
+    logic        sending;
 
     predator_prey model (
         .clk(clk),
@@ -44,54 +43,48 @@ module top (
         .done(done)
     );
 
+    // Latch values and manage packet transmission state
     always_ff @(posedge clk or posedge reset) begin
-        if (reset || pack_rst) begin
-            pack_counter <= 4'b0;
-        end else if (pack_en) begin
-            pack_counter <= pack_counter + 4'b1;
-        end
-    end
-
-
-    always_ff @(posedge clk, posedge reset) begin
         if (reset) begin
-            valid_in <= 1'b0;
             prey_latched     <= 32'b0;
             predator_latched <= 32'b0;
+            pack_counter     <= 4'd0;
+            sending          <= 1'b0;
         end else if (tick) begin
-            prey_latched <= prey;
+            prey_latched     <= prey;
             predator_latched <= predator;
-            valid_in <= 1'b1;
-            pack_rst <= 1'b1;
-        end else begin
-            pack_rst <= 1'b0;
-            valid_in <= (pack_counter <= 4'b0111);
+            pack_counter     <= 4'd0;
+            sending          <= 1'b1;  // Start packet on next clock cycle
+        end else if (sending) begin
+            if (pack_en) begin
+                if (pack_counter == 4'd7) begin
+                    pack_counter <= 4'd0;
+                    sending      <= 1'b0; // All 8 bytes transmitted
+                end else begin
+                    pack_counter <= pack_counter + 4'd1;
+                end
+            end
         end
     end
 
+    // Assert valid only when actively sending a packet
+    assign valid_in = sending && (pack_counter <= 4'd7);
+
+    // Byte select mux with complete defaults
     always_comb begin
-        if (reset) begin
-            data_in = 8'b0;
-        end
-        if (ready_out) begin
-            case (pack_counter)
-                4'd0: data_in = prey_latched[31:24];
-                4'd1: data_in = prey_latched[23:16];
-                4'd2: data_in = prey_latched[15:8];
-                4'd3: data_in = prey_latched[7:0];
-                4'd4: data_in = predator_latched[31:24];
-                4'd5: data_in = predator_latched[23:16];
-                4'd6: data_in = predator_latched[15:8];
-                4'd7: data_in = predator_latched[7:0];
-                default: data_in = 8'b0;
-            endcase
-            
-        end
-        if (done) begin
-            pack_en = 1'b1;
-        end else begin
-            pack_en = 1'b0;
-        end
+        pack_en = done;
+        
+        case (pack_counter)
+            4'd0:    data_in = prey_latched[31:24];
+            4'd1:    data_in = prey_latched[23:16];
+            4'd2:    data_in = prey_latched[15:8];
+            4'd3:    data_in = prey_latched[7:0];
+            4'd4:    data_in = predator_latched[31:24];
+            4'd5:    data_in = predator_latched[23:16];
+            4'd6:    data_in = predator_latched[15:8];
+            4'd7:    data_in = predator_latched[7:0];
+            default: data_in = 8'h00;
+        endcase
     end
     
 endmodule
