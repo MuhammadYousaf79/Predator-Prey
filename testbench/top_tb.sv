@@ -4,10 +4,12 @@ module top_tb ();
     logic clk;
     logic reset;
     logic tx_out;
+    logic rx_in;
 
     top dut (
         .clk(clk),
         .reset(reset),
+        .rx_in(rx_in),
         .tx_out(tx_out)
     );
 
@@ -21,7 +23,7 @@ module top_tb ();
         reset = 0;
         
         
-        repeat(11) @(posedge dut.tick);
+        repeat(11) @(posedge dut.tick_1ms);
 
         $stop;
 

@@ -1,95 +1,99 @@
 module predator_prey (
     input  logic clk,
     input  logic reset,
-    input  logic tick,
+    input  logic tick,                      // 1-cycle strobe when prey is valid / 1ms fires
 
-    output logic signed [31:0] prey,
-    output logic signed [31:0] predator
+    input  logic signed [31:0] prey,        // Supplied from PC (Q8.24)
+    output logic signed [31:0] predator     // Computed by FPGA (Q8.24)
 );
 
     parameter DATA_WIDTH = 32;
 
     // Q8.24 fixed point parameters
-    parameter signed [31:0] ALPHA = 32'sd16777216;  // 1.0
-    parameter signed [31:0] BETA  = 32'sd8388608;   // 0.5
     parameter signed [31:0] GAMMA = 32'sd16777216;  // 1.0
     parameter signed [31:0] DELTA = 32'sd8388608;   // 0.5
     parameter signed [31:0] H     = 32'sd16777;     // 0.001
 
+    // Initial state: 1.0 in Q8.24
+    localparam signed [31:0] INIT_PREDATOR = 32'sd16777216;
+
     // ---------------------------------------------------------
-    // PIPELINE STAGE 1: Calculate xy, alpha*prey, delta*predator
+    // STAGE 1: Multiplication (xy and delta * predator)
     // ---------------------------------------------------------
-    logic signed [63:0] stg1_mult_xy, stg1_mult_alpha, stg1_mult_delta;
+    logic signed [63:0] mult_xy;
+    logic signed [63:0] mult_delta_pred;
     
-    logic signed [31:0] s1_xy, s1_alpha_prey, s1_delta_pred;
-    logic signed [31:0] s1_prey, s1_predator;
+    logic signed [31:0] s1_xy;
+    logic signed [31:0] s1_delta_pred;
+    logic signed [31:0] s1_predator;
+    logic               s1_valid;
 
     always_comb begin
-        stg1_mult_xy    = prey * predator;
-        stg1_mult_alpha = ALPHA * prey;
-        stg1_mult_delta = DELTA * predator;
-    end
-
-    always_ff @(posedge clk) begin
-        // Shift right by 24 for Q8.24 format
-        s1_xy         <= stg1_mult_xy >>> 24;
-        s1_alpha_prey <= stg1_mult_alpha >>> 24;
-        s1_delta_pred <= stg1_mult_delta >>> 24;
-        
-        s1_prey       <= prey;
-        s1_predator   <= predator;
+        mult_xy         = prey * predator;
+        mult_delta_pred = DELTA * predator;
     end
 
     // ---------------------------------------------------------
-    // PIPELINE STAGE 2: Calculate dx and dy partials
+    // STAGE 2: dy partial calculation (gamma * xy) - (delta * pred)
     // ---------------------------------------------------------
-    logic signed [63:0] stg2_mult_beta, stg2_mult_gamma;
-    
-    logic signed [31:0] s2_dx, s2_dy;
-    logic signed [31:0] s2_prey, s2_predator;
+    logic signed [63:0] mult_gamma_xy;
+    logic signed [31:0] s2_dy;
+    logic signed [31:0] s2_predator;
+    logic               s2_valid;
 
     always_comb begin
-        stg2_mult_beta  = BETA * s1_xy;
-        stg2_mult_gamma = GAMMA * s1_xy;
-    end
-
-    always_ff @(posedge clk) begin
-        // Shift right by 24 for Q8.24 format
-        s2_dx <= s1_alpha_prey - (stg2_mult_beta >>> 24);
-        s2_dy <= (stg2_mult_gamma >>> 24) - s1_delta_pred;
-        
-        s2_prey       <= s1_prey;
-        s2_predator   <= s1_predator;
+        mult_gamma_xy = GAMMA * s1_xy;
     end
 
     // ---------------------------------------------------------
-    // PIPELINE STAGE 3: Multiply by H and add to original
+    // STAGE 3: Scale by H and compute next predator
     // ---------------------------------------------------------
-    logic signed [63:0] stg3_mult_h_dx, stg3_mult_h_dy;
-    
-    logic signed [31:0] next_prey;
+    logic signed [63:0] mult_h_dy;
     logic signed [31:0] next_predator;
 
     always_comb begin
-        stg3_mult_h_dx = H * s2_dx;
-        stg3_mult_h_dy = H * s2_dy;
-        
-        // Shift right by 24 for Q8.24 format
-        next_prey     = s2_prey + (stg3_mult_h_dx >>> 24);
-        next_predator = s2_predator + (stg3_mult_h_dy >>> 24);
+        mult_h_dy     = H * s2_dy;
+        next_predator = s2_predator + (mult_h_dy >>> 24);
     end
 
     // ---------------------------------------------------------
-    // SEQUENTIAL LOGIC: Update final registers on tick
+    // Synchronous Pipeline Progression
     // ---------------------------------------------------------
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
-            prey     <= 32'sd33554432; // 2.0 in Q8.24
-            predator <= 32'sd16777216; // 1.0 in Q8.24
-        end
-        else if (tick) begin
-            prey     <= next_prey;
-            predator <= next_predator;
+            predator      <= INIT_PREDATOR;
+            s1_xy         <= '0;
+            s1_delta_pred <= '0;
+            s1_predator   <= '0;
+            s1_valid      <= 1'b0;
+
+            s2_dy         <= '0;
+            s2_predator   <= '0;
+            s2_valid      <= 1'b0;
+        end else begin
+            // Pipeline Stage 1
+            if (tick) begin
+                s1_xy         <= mult_xy >>> 24;
+                s1_delta_pred <= mult_delta_pred >>> 24;
+                s1_predator   <= predator;
+                s1_valid      <= 1'b1;
+            end else begin
+                s1_valid      <= 1'b0;
+            end
+
+            // Pipeline Stage 2
+            if (s1_valid) begin
+                s2_dy       <= (mult_gamma_xy >>> 24) - s1_delta_pred;
+                s2_predator <= s1_predator;
+                s2_valid    <= 1'b1;
+            end else begin
+                s2_valid    <= 1'b0;
+            end
+
+            // Pipeline Stage 3 (Commit updated value)
+            if (s2_valid) begin
+                predator <= next_predator;
+            end
         end
     end
 
