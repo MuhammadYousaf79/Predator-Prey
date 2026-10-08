@@ -85,12 +85,24 @@ module top (
     // -------------------------------------------------------------------------
     logic [31:0] predator_out;
 
+    // one-cycle pulse when the 4th prey byte arrives
+    wire prey_pulse = rx_valid && (rx_byte_cnt == 2'd3);
+
+    // delay one clock so prey_latched has been loaded
+    logic prey_pulse_d;
+    always_ff @(posedge clk or posedge reset) begin
+        if (reset) prey_pulse_d <= 1'b0;
+        else       prey_pulse_d <= prey_pulse;
+    end
+
+    logic core_done;
     predator_prey model (
         .clk(clk),
         .reset(reset),
-        .tick(tick_1ms),
+        .tick(prey_pulse_d),
         .prey(prey_latched),
-        .predator(predator_out)
+        .predator(predator_out),
+        .done(core_done)
     );
 
     // -------------------------------------------------------------------------
@@ -124,7 +136,7 @@ module top (
         if (reset) begin
             start_tx_strobe <= 1'b0;
         end else begin
-            start_tx_strobe <= tick_1ms;
+            start_tx_strobe <= core_done;
         end
     end
 

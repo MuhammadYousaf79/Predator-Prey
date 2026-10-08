@@ -1,100 +1,37 @@
 module predator_prey (
-    input  logic clk,
-    input  logic reset,
-    input  logic tick,                      // 1-cycle strobe when prey is valid / 1ms fires
-
-    input  logic signed [31:0] prey,        // Supplied from PC (Q8.24)
-    output logic signed [31:0] predator     // Computed by FPGA (Q8.24)
+    input  logic clk, reset, tick,
+    input  logic signed [31:0] prey,
+    output logic signed [31:0] predator,
+    output logic done
 );
+    parameter signed [31:0] GAMMA = 32'sd16777216; // 1.0
+    parameter signed [31:0] DELTA = 32'sd8388608;  // 0.5
+    parameter signed [31:0] H     = 32'sd16777;    // 0.001
+    localparam signed [31:0] Y0   = 32'sd16777216;
 
-    parameter DATA_WIDTH = 32;
+    function automatic logic signed [31:0] qm(input logic signed [31:0] a, b);
+        logic signed [63:0] p;
+        p  = 64'(a) * 64'(b);
+        qm = 32'(p >>> 24);
+    endfunction
 
-    // Q8.24 fixed point parameters
-    parameter signed [31:0] GAMMA = 32'sd16777216;  // 1.0
-    parameter signed [31:0] DELTA = 32'sd8388608;   // 0.5
-    parameter signed [31:0] H     = 32'sd16777;     // 0.001
+    logic signed [31:0] y_s, t2, t3, t4;
+    logic [2:0] v;
 
-    // Initial state: 1.0 in Q8.24
-    localparam signed [31:0] INIT_PREDATOR = 32'sd16777216;
-
-    // ---------------------------------------------------------
-    // STAGE 1: Multiplication (xy and delta * predator)
-    // ---------------------------------------------------------
-    logic signed [63:0] mult_xy;
-    logic signed [63:0] mult_delta_pred;
-    
-    logic signed [31:0] s1_xy;
-    logic signed [31:0] s1_delta_pred;
-    logic signed [31:0] s1_predator;
-    logic               s1_valid;
-
-    always_comb begin
-        mult_xy         = prey * predator;
-        mult_delta_pred = DELTA * predator;
-    end
-
-    // ---------------------------------------------------------
-    // STAGE 2: dy partial calculation (gamma * xy) - (delta * pred)
-    // ---------------------------------------------------------
-    logic signed [63:0] mult_gamma_xy;
-    logic signed [31:0] s2_dy;
-    logic signed [31:0] s2_predator;
-    logic               s2_valid;
-
-    always_comb begin
-        mult_gamma_xy = GAMMA * s1_xy;
-    end
-
-    // ---------------------------------------------------------
-    // STAGE 3: Scale by H and compute next predator
-    // ---------------------------------------------------------
-    logic signed [63:0] mult_h_dy;
-    logic signed [31:0] next_predator;
-
-    always_comb begin
-        mult_h_dy     = H * s2_dy;
-        next_predator = s2_predator + (mult_h_dy >>> 24);
-    end
-
-    // ---------------------------------------------------------
-    // Synchronous Pipeline Progression
-    // ---------------------------------------------------------
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
-            predator      <= INIT_PREDATOR;
-            s1_xy         <= '0;
-            s1_delta_pred <= '0;
-            s1_predator   <= '0;
-            s1_valid      <= 1'b0;
-
-            s2_dy         <= '0;
-            s2_predator   <= '0;
-            s2_valid      <= 1'b0;
+            predator <= Y0; v <= '0; done <= 1'b0;
+            y_s <= '0; t2 <= '0; t3 <= '0; t4 <= '0;
         end else begin
-            // Pipeline Stage 1
+            done <= 1'b0;
+            v    <= {v[1:0], tick};
             if (tick) begin
-                s1_xy         <= mult_xy >>> 24;
-                s1_delta_pred <= mult_delta_pred >>> 24;
-                s1_predator   <= predator;
-                s1_valid      <= 1'b1;
-            end else begin
-                s1_valid      <= 1'b0;
+                y_s <= predator;
+                t2  <= qm(GAMMA, prey) - DELTA;     // delta*x - gamma
             end
-
-            // Pipeline Stage 2
-            if (s1_valid) begin
-                s2_dy       <= (mult_gamma_xy >>> 24) - s1_delta_pred;
-                s2_predator <= s1_predator;
-                s2_valid    <= 1'b1;
-            end else begin
-                s2_valid    <= 1'b0;
-            end
-
-            // Pipeline Stage 3 (Commit updated value)
-            if (s2_valid) begin
-                predator <= next_predator;
-            end
+            if (v[0]) t3 <= qm(y_s, t2);            // y*(delta*x - gamma)
+            if (v[1]) t4 <= qm(H, t3);              // h * that
+            if (v[2]) begin predator <= y_s + t4; done <= 1'b1; end
         end
     end
-
 endmodule
