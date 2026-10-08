@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 
 # --- Configuration ---
 PORT = 'COM4'
-BAUD = 115200
-TOTAL_STEPS = 1_000_000
+BAUD = 2_000_000
+TOTAL_STEPS = 50_000
 Q24_SCALE = 2**24  # 16777216.0 for Q8.24 conversion
 
 # Lotka-Volterra parameters for PC-side Prey calculation (Euler method)
@@ -16,7 +16,7 @@ H     = 0.001
 
 def main():
     ser = serial.Serial(PORT, BAUD, timeout=0.1)
-    # time.sleep(1.0)  # Allow port to stabilize
+    time.sleep(1.0)  # Allow port to stabilize
 
     print("=" * 60)
     print(f"Connected to {PORT} at {BAUD} baud.")
@@ -34,7 +34,7 @@ def main():
     ser.reset_output_buffer()
 
     # Initial prey condition in Q8.24 (2.0)
-    prey_int = int(2.0 * Q24_SCALE)
+    prey_int = round(2.0 * Q24_SCALE)
 
     prey_history = []
     predator_history = []
@@ -45,11 +45,11 @@ def main():
     try:
         for step in range(TOTAL_STEPS):
             # 1. Send exactly 4 raw bytes to FPGA (signed 32-bit big-endian)
-            raw_response = ser.read(4)
             ser.write(struct.pack('>i', prey_int))
             ser.flush()
 
             # 2. Read exactly 4 raw bytes back from FPGA
+            raw_response = ser.read(4)
             if len(raw_response) < 4:
                 print(f"\n[ERROR] Sync/Timeout at step {step}: received {len(raw_response)} bytes.")
                 if len(raw_response) > 0:
@@ -76,7 +76,7 @@ def main():
             prey_next_val = prey_val + (H * d_prey)
 
             # Convert back to signed Q8.24 integer for the next FPGA transfer
-            prey_int = int(prey_next_val * Q24_SCALE)
+            prey_int = round(prey_next_val * Q24_SCALE)
             
             # Clamp to 32-bit signed limits
             if prey_int > 2147483647:

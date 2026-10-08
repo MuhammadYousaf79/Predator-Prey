@@ -1,6 +1,6 @@
 module uart_rx #(
     parameter CLK_FREQ  = 100_000_000,
-    parameter BAUD_RATE = 115_200
+    parameter BAUD_RATE = 2_000_000
 )(
     input  logic       clk,
     input  logic       reset,

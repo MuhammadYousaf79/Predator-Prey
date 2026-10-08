@@ -5,8 +5,8 @@ module uart_baud_gen (
     output logic baud_tick
 );
 
-    parameter BAUD_COUNT_WIDTH = 10;
-    parameter BAUD_COUNT_TO = 867;
+    parameter BAUD_COUNT_WIDTH = 6;
+    parameter BAUD_COUNT_TO = 49;
 
     logic [BAUD_COUNT_WIDTH-1:0] baud_counter;
 
