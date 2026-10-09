@@ -99,7 +99,8 @@ module top (
     predator_prey model (
         .clk(clk),
         .reset(reset),
-        .tick(prey_pulse_d),
+        .tick(tick_1ms),
+        .valid_prey(prey_pulse_d),
         .prey(prey_latched),
         .predator(predator_out),
         .done(core_done)
