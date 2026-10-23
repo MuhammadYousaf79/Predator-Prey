@@ -1,7 +1,7 @@
 // =============================================================================
 // gen_step_tb.cpp - C simulation / C-RTL co-simulation testbench for gen_step
 //
-// Golden model: double-precision forward Euler of the machine-1 equations,
+// Golden model: double-precision forward Euler of machine GEN_ID (bus GEN_ID),
 // written exactly as in daefun() of TA_Simulation.m.
 //
 // Scenario (terminal bus driven by the "CPU" = this testbench):
@@ -19,13 +19,20 @@
 #include "gen_step.h"
 #include "gen_params.h"
 
-// Machine-1 equilibrium from Equilibrium_Values.mat (X_equilibrium(1:9))
-static const double X0[GEN_NSTATE] = {
-    0.75230068, 1.0, 0.95154547, 0.47723241, 1.94397421,
-    7.01337039, 0.0, 0.0, 0.0
+// Equilibrium of all four machines from Equilibrium_Values.mat
+// (X_equilibrium) and their terminal buses (V_mag_ss, V_angle_ss)
+static const double X_EQ[4][GEN_NSTATE] = {
+    {0.75230068, 1.0, 0.95154547, 0.47723241, 1.94397421, 7.01337039, 0, 0, 0},
+    {0.56380763, 1.0, 0.96293430, 0.45895550, 2.02363995, 7.01457054, 0, 0, 0},
+    {0.29988489, 1.0, 0.94233852, 0.48705480, 1.95772561, 7.20430208, 0, 0, 0},
+    {0.10585626, 1.0, 0.94303785, 0.46965638, 1.97727797, 7.01419872, 0, 0, 0}
 };
-static const double V_SS     = 1.03;   // V_mag_ss(1)
-static const double THETA_SS = 0.0;    // V_angle_ss(1)
+static const double V_EQ[4]  = {1.03, 1.01, 1.03, 1.01};
+static const double TH_EQ[4] = {0.0, -0.17038531, -0.47185090, -0.64970043};
+
+static const double *X0      = X_EQ[GEN_ID - 1];
+static const double V_SS     = V_EQ[GEN_ID - 1];
+static const double THETA_SS = TH_EQ[GEN_ID - 1];
 
 static void ref_step(const double *x, double v, double th, double vref,
                      double pref, double *xn, double *pg_o, double *qg_o)
@@ -145,7 +152,8 @@ int main()
     const double TRAJ_TOL     = 1e-3;
 
     int fail = 0;
-    printf("\n%-6s %16s %16s\n", "state", "1-step |err|", "trajectory |err|");
+    printf("\nMachine %d (bus %d)\n", GEN_ID, GEN_ID);
+    printf("%-6s %16s %16s\n", "state", "1-step |err|", "trajectory |err|");
     for (int i = 0; i < GEN_NSTATE; i++) {
         printf("%-6s %16.3e %16.3e\n", names[i], one_step_err[i], traj_err[i]);
         if (one_step_err[i] > ONE_STEP_TOL || traj_err[i] > TRAJ_TOL)

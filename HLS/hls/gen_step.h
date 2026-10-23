@@ -1,5 +1,5 @@
 // =============================================================================
-// gen_step.h - One forward-Euler step (h = 1 ms) of generator 1 of the Kundur
+// gen_step.h - One forward-Euler step (h = 1 ms) of generator GEN_ID of the Kundur
 //              system: two-axis machine + exciter + governor + PSS (9 states).
 //
 // Port / state / UART format : Q8.24 (signed 32 bit, 8 integer, 24 fraction)

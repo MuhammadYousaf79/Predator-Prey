@@ -1,7 +1,7 @@
 // =============================================================================
 // gen_step.cpp - Pipelined (II = 1) Q8.24 generator model for Vivado HLS
 //
-// Implements, for machine 1 of TA_Simulation.m (daefun):
+// Implements, for machine GEN_ID (gen_params.h) of TA_Simulation.m (daefun):
 //
 //   Vd = V sin(delta - theta)          Vq = V cos(delta - theta)
 //   Id = (Ed'-Vd) Rs/den + (Eq'-Vq) xq'/den

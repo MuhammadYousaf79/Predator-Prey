@@ -1,5 +1,5 @@
 // =============================================================================
-// gen_params.h - Machine 1 parameters of the Kundur 4-machine system
+// gen_params.h - Parameters of machine GEN_ID of the Kundur 4-machine system
 //                (taken from Load_Kundur_System() in TA_Simulation.m)
 //
 // All per-unit values are on MVA_Base = 100 MVA. Every coefficient used by the
@@ -19,8 +19,15 @@ static const double P_PI = 3.14159265358979323846;
 static const double P_H_STEP = 0.001;                    // Euler step [s] = 1 ms
 static const double P_WS     = 2.0 * P_PI * 60.0;        // synchronous speed
 
+// Which Kundur machine the FPGA simulates (1..4). Only H differs between them;
+// the machine sits on bus GEN_ID. Override with -DGEN_ID=n.
+#ifndef GEN_ID
+#define GEN_ID 3
+#endif
+static const double P_H_TAB[4] = {6.5, 6.5, 6.175, 6.175};
+
 // Synchronous machine (two-axis model)
-static const double P_H       = 6.5 * 900.0 / P_MVA_BASE;
+static const double P_H       = P_H_TAB[GEN_ID - 1] * 900.0 / P_MVA_BASE;
 static const double P_KD      = 2.0 * 900.0 / P_MVA_BASE; // K_d Changed from 0.0 to 2.0
 static const double P_XD      = 1.8    * P_MACH_SCALE;
 static const double P_XQ      = 1.7    * P_MACH_SCALE;
