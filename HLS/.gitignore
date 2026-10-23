@@ -1,0 +1,8 @@
+hls/gen_step_prj/
+hls/*.log
+tb/work/
+vivado/out/
+vivado/*.log
+vivado/.Xil/
+*.jou
+vivado/usage_statistics_webtalk.*
